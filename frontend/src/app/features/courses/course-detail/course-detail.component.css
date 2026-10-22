@@ -270,3 +270,151 @@
   border-radius: var(--radius);
   border: 1px dashed var(--border-color);
 }
+
+/* Tab 3: Assignments List & Modals */
+.assignment-item-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.assignment-row-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background-color: var(--bg-page);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  gap: 16px;
+  transition: box-shadow 0.2s ease;
+}
+
+.assignment-row-card:hover {
+  box-shadow: var(--shadow-sm);
+  background-color: #ffffff;
+}
+
+.a-info {
+  flex: 1;
+}
+
+.a-header-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.a-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.badge-late {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.a-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.a-meta {
+  display: flex;
+  gap: 20px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.a-meta strong {
+  color: var(--text-primary);
+}
+
+.a-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.student-status-badge {
+  margin-bottom: 4px;
+}
+
+.teacher-stats-tag {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* Modal styles */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 16px;
+}
+
+.modal-dialog {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background-color: var(--bg-page);
+}

@@ -182,6 +182,39 @@ namespace StudentManagement.Api.Data
                     await context.SaveChangesAsync();
                 }
             }
+
+            // Seed Assignments if none exist
+            if (!await context.Assignments.AnyAsync())
+            {
+                var course1 = await context.Courses.FirstOrDefaultAsync(c => c.Code == "CS101");
+                if (course1 != null)
+                {
+                    var a1 = new Assignment
+                    {
+                        CourseId = course1.Id,
+                        Title = "Bài tập 1: Giải phương trình bậc 2 và Quản lý mảng trong C#",
+                        Description = "Viết chương trình C# giải phương trình bậc 2 và thực hiện sắp xếp danh sách học sinh. Nộp mã nguồn hoặc tệp đính kèm.",
+                        DueDate = DateTime.UtcNow.AddDays(7),
+                        MaxScore = 100m,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    var a2 = new Assignment
+                    {
+                        CourseId = course1.Id,
+                        Title = "Bài tập 2: Thiết kế mô hình Lớp kế thừa và Đa hình (OOP)",
+                        Description = "Xây dựng hệ thống class hướng đối tượng áp dụng các nguyên lý OOP cơ bản. (Bài tập quá hạn để kiểm tra nộp muộn).",
+                        DueDate = DateTime.UtcNow.AddDays(-2),
+                        MaxScore = 100m,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow.AddDays(-5)
+                    };
+
+                    await context.Assignments.AddRangeAsync(a1, a2);
+                    await context.SaveChangesAsync();
+                }
+            }
         }
     }
 }

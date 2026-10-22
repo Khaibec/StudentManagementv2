@@ -1,0 +1,189 @@
+<div class="container">
+  <!-- Breadcrumb -->
+  <div class="breadcrumb-bar">
+    <a [routerLink]="['/courses', courseId]" class="btn btn-secondary btn-sm">
+      <span>← Về khóa học</span>
+    </a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ assignment ? assignment.title : 'Chi tiết bài tập' }}</span>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Đang tải thông tin bài tập...</p>
+  </div>
+
+  <!-- 403 Forbidden State -->
+  <div *ngIf="!loading && isForbidden" class="error-card forbidden-card">
+    <div class="error-icon">🚫</div>
+    <h2>Truy cập bị từ chối (403 Forbidden)</h2>
+    <p>{{ errorMessage }}</p>
+    <a [routerLink]="['/courses']" class="btn btn-primary" style="margin-top: 16px;">
+      Về danh sách khóa học của bạn
+    </a>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="!loading && !isForbidden && errorMessage" class="alert alert-danger">
+    <p>{{ errorMessage }}</p>
+    <button (click)="loadAssignment()" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
+      Thử lại
+    </button>
+  </div>
+
+  <!-- Assignment Details & Submission Grid -->
+  <div *ngIf="!loading && assignment" class="assignment-layout">
+    <!-- Left Column: Assignment Details -->
+    <div class="assignment-main">
+      <div class="card assignment-card">
+        <div class="assignment-header">
+          <div class="title-wrap">
+            <span class="course-badge">{{ assignment.courseTitle }}</span>
+            <h1 class="assignment-title">{{ assignment.title }}</h1>
+          </div>
+          <div class="due-status-badge">
+            <span *ngIf="assignment.isOverdue" class="badge badge-late">Quá hạn nộp</span>
+            <span *ngIf="!assignment.isOverdue" class="badge badge-success">Đang mở</span>
+          </div>
+        </div>
+
+        <div class="meta-row">
+          <div class="meta-item">
+            <span class="meta-label">Hạn chót nộp bài:</span>
+            <strong class="meta-value" [ngClass]="{'text-danger': assignment.isOverdue}">
+              {{ assignment.dueDate | date:'dd/MM/yyyy HH:mm' }}
+            </strong>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Thang điểm tối đa:</span>
+            <strong class="meta-value">{{ assignment.maxScore }} điểm</strong>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Ngày giao bài:</span>
+            <span class="meta-value">{{ assignment.createdAt | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+
+        <div class="description-section">
+          <h3>Nội dung yêu cầu bài tập:</h3>
+          <div class="description-content">
+            {{ assignment.description || 'Chưa có hướng dẫn bổ sung cho bài tập này.' }}
+          </div>
+        </div>
+
+        <!-- Teacher / Admin Quick Actions -->
+        <div *ngIf="!authService.isStudent" class="teacher-actions-box">
+          <div class="teacher-actions-text">
+            <strong>Khu vực Giảng viên / Quản trị viên</strong>
+            <p>Xem danh sách bài nộp của học viên, đánh giá và chấm điểm trực tiếp.</p>
+          </div>
+          <a [routerLink]="['/courses', courseId, 'assignments', assignment.id, 'grading']" class="btn btn-primary">
+            <span>Đi đến trang Chấm điểm</span>
+            <span>→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Student Submission Section -->
+    <div *ngIf="authService.isStudent" class="submission-sidebar">
+      <!-- Status Card if Already Submitted -->
+      <div *ngIf="assignment.mySubmission" class="card submission-status-card">
+        <h3>Trạng thái bài nộp của bạn</h3>
+
+        <div class="status-indicator" [ngClass]="assignment.mySubmission.status === 'SUBMITTED_LATE' ? 'status-late' : 'status-ontime'">
+          <span class="status-icon">
+            {{ assignment.mySubmission.status === 'SUBMITTED_LATE' ? '⚠️' : '✅' }}
+          </span>
+          <div>
+            <strong>{{ assignment.mySubmission.status === 'SUBMITTED_LATE' ? 'Nộp muộn (Trễ hạn)' : 'Nộp đúng hạn' }}</strong>
+            <p class="status-time">Nộp lúc: {{ assignment.mySubmission.submittedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+        </div>
+
+        <!-- Grade Card if Graded -->
+        <div *ngIf="assignment.mySubmission.isGraded" class="grade-result-card">
+          <div class="grade-score-header">
+            <span class="grade-label">Điểm số đạt được:</span>
+            <span class="grade-score">{{ assignment.mySubmission.score }} / {{ assignment.maxScore }}</span>
+          </div>
+          <div *ngIf="assignment.mySubmission.feedback" class="grade-feedback">
+            <strong>Nhận xét của giảng viên:</strong>
+            <p>{{ assignment.mySubmission.feedback }}</p>
+          </div>
+          <div class="grade-meta">
+            <span>Chấm bởi: {{ assignment.mySubmission.gradedByName || 'Giảng viên' }}</span>
+            <span *ngIf="assignment.mySubmission.gradedAt">({{ assignment.mySubmission.gradedAt | date:'dd/MM/yyyy' }})</span>
+          </div>
+        </div>
+
+        <!-- Pending Grading Notice -->
+        <div *ngIf="!assignment.mySubmission.isGraded" class="alert alert-info" style="margin-top: 12px; margin-bottom: 12px;">
+          Bài tập đang chờ giảng viên chấm điểm. Bạn có thể nộp lại bài bên dưới nếu cần bổ sung.
+        </div>
+
+        <!-- Download submitted file link -->
+        <div *ngIf="assignment.mySubmission.hasFile" class="submitted-file-row">
+          <span>📎 Tệp đã nộp: <strong>{{ assignment.mySubmission.fileName }}</strong></span>
+          <button (click)="downloadSubmissionFile(assignment.mySubmission.id, assignment.mySubmission.fileName!)" class="btn btn-secondary btn-sm">
+            Tải về
+          </button>
+        </div>
+      </div>
+
+      <!-- Submission Form Card -->
+      <div class="card submission-form-card">
+        <h3>{{ assignment.mySubmission ? 'Nộp lại bài tập' : 'Nộp bài tập' }}</h3>
+        <p class="form-hint">
+          Thời gian nộp bài được tính tự động theo đồng hồ máy chủ (UTC) khi bạn bấm nút Gửi.
+        </p>
+
+        <div *ngIf="submitSuccess" class="alert alert-success">
+          {{ submitSuccess }}
+        </div>
+
+        <div *ngIf="submitError" class="alert alert-danger">
+          {{ submitError }}
+        </div>
+
+        <form (ngSubmit)="onSubmitAssignment()">
+          <div class="form-group">
+            <label class="form-label" for="textContent">Nội dung bài làm / Trả lời dạng văn bản:</label>
+            <textarea
+              id="textContent"
+              class="form-control"
+              rows="6"
+              [(ngModel)]="textContent"
+              name="textContent"
+              placeholder="Nhập câu trả lời, liên kết bài làm, hoặc ghi chú gửi đến giảng viên..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="submissionFile">Đính kèm tệp tin (PDF, Word, Code, Zip, ảnh - tối đa 25MB):</label>
+            <input
+              type="file"
+              id="submissionFile"
+              class="form-control file-input"
+              (change)="onFileSelected($event)"
+              accept=".pdf,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.txt,.zip,.rar,.7z,.png,.jpg,.jpeg"
+            />
+            <small *ngIf="selectedFile" class="file-name-preview">
+              Tệp đã chọn: {{ selectedFile.name }} ({{ (selectedFile.size / 1024 / 1024) | number:'1.1-2' }} MB)
+            </small>
+          </div>
+
+          <button
+            type="submit"
+            class="btn btn-primary btn-block"
+            [disabled]="submitting"
+          >
+            <span *ngIf="submitting" class="spinner-sm"></span>
+            <span>{{ submitting ? 'Đang gửi bài...' : (assignment.mySubmission ? 'Gửi nộp lại bài tập' : 'Xác nhận nộp bài') }}</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

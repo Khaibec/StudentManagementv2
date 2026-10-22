@@ -110,7 +110,7 @@
         class="tab-btn"
         [class.active]="activeTab === 'assignments'"
       >
-        Bài tập & Điểm số (Phase 3)
+        Bài tập & Điểm số ({{ assignments.length }})
       </button>
     </div>
 
@@ -165,12 +165,162 @@
       </div>
     </div>
 
-    <!-- Tab 3: Phase 3 Assignments Placeholder -->
+    <!-- Tab 3: Assignments List -->
     <div *ngIf="activeTab === 'assignments'" class="card tab-pane">
-      <div class="phase-preview-box">
-        <span class="preview-badge">Kế hoạch Phase 3</span>
-        <h3>Bài tập, Nộp bài & Chấm điểm</h3>
-        <p>Tính năng giao bài tập, hạn nộp, nộp bài trực tuyến và giảng viên chấm điểm sẽ được kích hoạt trong Phase 3.</p>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h3 style="margin: 0;">Danh sách bài tập & Đánh giá</h3>
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">
+            Học viên nộp bài trực tuyến (văn bản hoặc tệp đính kèm). Giảng viên chấm điểm và phản hồi.
+          </p>
+        </div>
+        <button
+          *ngIf="!authService.isStudent"
+          (click)="openCreateAssignmentModal()"
+          class="btn btn-primary btn-sm"
+        >
+          ➕ Giao bài tập mới
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="assignmentsLoading" class="loading-container" style="padding: 24px;">
+        <div class="spinner"></div>
+        <p>Đang tải danh sách bài tập...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!assignmentsLoading && assignments.length === 0" class="empty-state">
+        <p>Hiện chưa có bài tập nào được giao cho khóa học này.</p>
+      </div>
+
+      <!-- Assignment Cards -->
+      <div *ngIf="!assignmentsLoading && assignments.length > 0" class="assignment-item-grid">
+        <div *ngFor="let a of assignments" class="assignment-row-card">
+          <div class="a-info">
+            <div class="a-header-line">
+              <h4 class="a-title">{{ a.title }}</h4>
+              <span *ngIf="a.isOverdue" class="badge badge-late">Quá hạn</span>
+              <span *ngIf="!a.isOverdue" class="badge badge-success">Còn hạn</span>
+            </div>
+            <p *ngIf="a.description" class="a-desc">{{ a.description }}</p>
+            <div class="a-meta">
+              <span>⏰ Hạn nộp: <strong>{{ a.dueDate | date:'dd/MM/yyyy HH:mm' }}</strong></span>
+              <span>🎯 Thang điểm: <strong>{{ a.maxScore }} điểm</strong></span>
+            </div>
+          </div>
+
+          <!-- Student Actions & Status -->
+          <div *ngIf="authService.isStudent" class="a-actions">
+            <div class="student-status-badge">
+              <span *ngIf="a.isGraded" class="badge badge-enrolled">
+                ✓ Đã chấm: {{ a.score }} / {{ a.maxScore }} điểm
+              </span>
+              <span *ngIf="!a.isGraded && a.hasSubmitted && a.submissionStatus === 'SUBMITTED_ON_TIME'" class="badge badge-success">
+                ✓ Đã nộp đúng hạn
+              </span>
+              <span *ngIf="!a.isGraded && a.hasSubmitted && a.submissionStatus === 'SUBMITTED_LATE'" class="badge badge-late">
+                ⚠️ Nộp muộn
+              </span>
+              <span *ngIf="!a.hasSubmitted" class="badge badge-student">
+                Chưa nộp
+              </span>
+            </div>
+            <a [routerLink]="['/courses', course.id, 'assignments', a.id]" class="btn btn-primary btn-sm">
+              <span>{{ a.hasSubmitted ? 'Xem bài nộp' : 'Làm & Nộp bài' }}</span>
+              <span>→</span>
+            </a>
+          </div>
+
+          <!-- Teacher / Admin Actions -->
+          <div *ngIf="!authService.isStudent" class="a-actions">
+            <div class="teacher-stats-tag">
+              <strong>{{ a.submissionCount || 0 }}</strong> bài nộp
+              <small *ngIf="a.submissionCount">({{ a.gradedCount || 0 }} đã chấm)</small>
+            </div>
+            <div class="btn-group">
+              <a [routerLink]="['/courses', course.id, 'assignments', a.id, 'grading']" class="btn btn-primary btn-sm">
+                Chấm bài
+              </a>
+              <button (click)="openEditAssignmentModal(a)" class="btn btn-secondary btn-sm">
+                Sửa
+              </button>
+              <button (click)="deleteAssignment(a.id)" class="btn btn-danger btn-sm">
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assignment Create / Edit Modal -->
+  <div *ngIf="showAssignmentModal" class="modal-backdrop" (click)="closeAssignmentModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingAssignmentId ? 'Chỉnh sửa bài tập' : 'Giao bài tập mới' }}</h3>
+        <button class="btn-close" (click)="closeAssignmentModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="assignmentModalError" class="alert alert-danger">
+          {{ assignmentModalError }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="assignTitle">Tiêu đề bài tập *:</label>
+          <input
+            type="text"
+            id="assignTitle"
+            class="form-control"
+            [(ngModel)]="assignmentForm.title"
+            placeholder="Ví dụ: Bài tập tuần 3 - Thực hành OOP C#"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="assignDueDate">Hạn chót nộp bài (Date & Time) *:</label>
+          <input
+            type="datetime-local"
+            id="assignDueDate"
+            class="form-control"
+            [(ngModel)]="assignmentForm.dueDate"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="assignMaxScore">Thang điểm tối đa *:</label>
+          <input
+            type="number"
+            id="assignMaxScore"
+            class="form-control"
+            [(ngModel)]="assignmentForm.maxScore"
+            min="1"
+            max="1000"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="assignDesc">Mô tả / Yêu cầu chi tiết:</label>
+          <textarea
+            id="assignDesc"
+            class="form-control"
+            rows="5"
+            [(ngModel)]="assignmentForm.description"
+            placeholder="Nhập nội dung đề bài, định dạng tệp yêu cầu..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeAssignmentModal()" [disabled]="savingAssignment">
+          Hủy bỏ
+        </button>
+        <button type="button" class="btn btn-primary" (click)="saveAssignment()" [disabled]="savingAssignment">
+          <span *ngIf="savingAssignment" class="spinner-sm"></span>
+          <span>{{ savingAssignment ? 'Đang lưu...' : (editingAssignmentId ? 'Cập nhật' : 'Tạo bài tập') }}</span>
+        </button>
       </div>
     </div>
   </div>

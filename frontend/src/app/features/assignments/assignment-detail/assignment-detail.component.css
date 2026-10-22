@@ -1,0 +1,266 @@
+.breadcrumb-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.breadcrumb-separator {
+  color: var(--text-muted);
+}
+
+.breadcrumb-current {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.assignment-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 992px) {
+  .assignment-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.assignment-card {
+  padding: 32px;
+}
+
+.assignment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 24px;
+}
+
+.course-badge {
+  display: inline-block;
+  background: var(--bg-hover);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.assignment-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.badge-late {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.meta-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  background-color: var(--bg-page);
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meta-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.meta-value {
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.text-danger {
+  color: var(--danger) !important;
+}
+
+.description-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.description-content {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  white-space: pre-line;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.teacher-actions-box {
+  margin-top: 32px;
+  padding: 20px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.teacher-actions-text strong {
+  color: #166534;
+  font-size: 15px;
+}
+
+.teacher-actions-text p {
+  color: #15803d;
+  font-size: 13px;
+  margin: 4px 0 0 0;
+}
+
+/* Submission Sidebar */
+.submission-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.submission-status-card {
+  padding: 24px;
+}
+
+.submission-status-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.status-ontime {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.status-late {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #b45309;
+}
+
+.status-time {
+  font-size: 12px;
+  margin: 2px 0 0 0;
+  opacity: 0.85;
+}
+
+.grade-result-card {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.grade-score-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.grade-label {
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.grade-score {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.grade-feedback {
+  background: #ffffff;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 8px;
+  color: var(--text-primary);
+}
+
+.grade-meta {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+.submitted-file-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-page);
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.submission-form-card {
+  padding: 24px;
+}
+
+.submission-form-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.file-name-preview {
+  display: block;
+  margin-top: 6px;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.btn-block {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+}

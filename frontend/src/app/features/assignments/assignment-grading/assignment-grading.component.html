@@ -1,0 +1,242 @@
+<div class="container">
+  <!-- Breadcrumbs -->
+  <div class="breadcrumb-bar">
+    <a [routerLink]="['/courses', courseId]" class="btn btn-secondary btn-sm">
+      <span>← Về khóa học</span>
+    </a>
+    <span class="breadcrumb-separator">/</span>
+    <a [routerLink]="['/courses', courseId, 'assignments', assignmentId]" class="btn btn-secondary btn-sm">
+      <span>Chi tiết bài tập</span>
+    </a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Chấm điểm bài nộp</span>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Đang tải danh sách bài nộp của học viên...</p>
+  </div>
+
+  <!-- 403 Forbidden State -->
+  <div *ngIf="!loading && isForbidden" class="error-card forbidden-card">
+    <div class="error-icon">🚫</div>
+    <h2>Truy cập bị từ chối (403 Forbidden)</h2>
+    <p>{{ errorMessage }}</p>
+    <a [routerLink]="['/courses']" class="btn btn-primary" style="margin-top: 16px;">
+      Về danh sách khóa học của bạn
+    </a>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && !isForbidden && errorMessage" class="alert alert-danger">
+    <p>{{ errorMessage }}</p>
+    <button (click)="loadData()" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
+      Thử lại
+    </button>
+  </div>
+
+  <!-- Grading Content -->
+  <div *ngIf="!loading && assignment" class="grading-layout">
+    <!-- Header Banner -->
+    <div class="card grading-header-card">
+      <div class="header-main">
+        <span class="course-badge">{{ assignment.courseTitle }}</span>
+        <h1>{{ assignment.title }}</h1>
+        <p class="due-info">
+          Hạn chót: <strong>{{ assignment.dueDate | date:'dd/MM/yyyy HH:mm' }}</strong>
+          | Thang điểm tối đa: <strong>{{ assignment.maxScore }} điểm</strong>
+        </p>
+      </div>
+
+      <!-- Stats Bar -->
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-number">{{ submissions.length }}</span>
+          <span class="stat-text">Tổng số bài nộp</span>
+        </div>
+        <div class="stat-box stat-graded">
+          <span class="stat-number">{{ gradedCount }}</span>
+          <span class="stat-text">Đã chấm điểm</span>
+        </div>
+        <div class="stat-box stat-pending">
+          <span class="stat-number">{{ pendingCount }}</span>
+          <span class="stat-text">Chờ chấm</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-bar">
+      <div class="tabs-nav" style="margin-bottom: 0;">
+        <button
+          class="tab-btn"
+          [class.active]="filterStatus === 'all'"
+          (click)="filterStatus = 'all'"
+        >
+          Tất cả ({{ submissions.length }})
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="filterStatus === 'pending'"
+          (click)="filterStatus = 'pending'"
+        >
+          Chờ chấm ({{ pendingCount }})
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="filterStatus === 'graded'"
+          (click)="filterStatus = 'graded'"
+        >
+          Đã chấm ({{ gradedCount }})
+        </button>
+      </div>
+    </div>
+
+    <!-- Submissions Table/List -->
+    <div class="card submissions-table-card">
+      <div *ngIf="filteredSubmissions.length === 0" class="empty-state">
+        <p>Không có bài nộp nào phù hợp với bộ lọc hiện tại.</p>
+      </div>
+
+      <div *ngIf="filteredSubmissions.length > 0" class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Học viên</th>
+              <th>Thời gian nộp</th>
+              <th>Trạng thái hạn nộp</th>
+              <th>Bài làm / Tệp đính kèm</th>
+              <th>Điểm số</th>
+              <th>Nhận xét</th>
+              <th style="text-align: right;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of filteredSubmissions" [class.row-graded]="s.isGraded">
+              <td>
+                <div class="student-info">
+                  <strong>{{ s.studentName }}</strong>
+                  <span class="username">@{{ s.studentUsername }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="time-text">{{ s.submittedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              </td>
+              <td>
+                <span *ngIf="s.status === 'SUBMITTED_ON_TIME'" class="badge badge-success">
+                  ✓ Đúng hạn
+                </span>
+                <span *ngIf="s.status === 'SUBMITTED_LATE'" class="badge badge-late">
+                  ⚠️ Nộp muộn
+                </span>
+              </td>
+              <td>
+                <div class="submission-content-preview">
+                  <p *ngIf="s.textContent" class="text-preview">"{{ s.textContent }}"</p>
+                  <button
+                    *ngIf="s.hasFile"
+                    (click)="downloadSubmissionFile(s.id, s.fileName!)"
+                    class="btn btn-secondary btn-xs file-badge"
+                  >
+                    📎 {{ s.fileName }} (Tải tệp)
+                  </button>
+                  <span *ngIf="!s.textContent && !s.hasFile" class="text-muted">Không có nội dung</span>
+                </div>
+              </td>
+              <td>
+                <span *ngIf="s.isGraded" class="score-display">
+                  <strong>{{ s.score }}</strong> / {{ assignment.maxScore }}
+                </span>
+                <span *ngIf="!s.isGraded" class="badge badge-pending">
+                  Chưa chấm
+                </span>
+              </td>
+              <td>
+                <span *ngIf="s.feedback" class="feedback-text">{{ s.feedback }}</span>
+                <span *ngIf="!s.feedback" class="text-muted">—</span>
+              </td>
+              <td style="text-align: right;">
+                <button (click)="openGradeModal(s)" class="btn btn-primary btn-sm">
+                  {{ s.isGraded ? 'Sửa điểm' : 'Chấm điểm' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grading Modal -->
+  <div *ngIf="selectedSubmission" class="modal-backdrop" (click)="closeGradeModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Chấm điểm bài làm</h3>
+        <button class="btn-close" (click)="closeGradeModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-student-summary">
+          <div>
+            <strong>{{ selectedSubmission.studentName }}</strong> ({{ selectedSubmission.studentUsername }})
+          </div>
+          <span *ngIf="selectedSubmission.status === 'SUBMITTED_ON_TIME'" class="badge badge-success">✓ Đúng hạn</span>
+          <span *ngIf="selectedSubmission.status === 'SUBMITTED_LATE'" class="badge badge-late">⚠️ Nộp muộn</span>
+        </div>
+
+        <div *ngIf="selectedSubmission.textContent" class="student-answer-box">
+          <label>Nội dung học viên trả lời:</label>
+          <div class="answer-text">{{ selectedSubmission.textContent }}</div>
+        </div>
+
+        <div *ngIf="selectedSubmission.hasFile" style="margin-bottom: 16px;">
+          <button (click)="downloadSubmissionFile(selectedSubmission.id, selectedSubmission.fileName!)" class="btn btn-secondary btn-sm">
+            📎 Tải tệp bài nộp: {{ selectedSubmission.fileName }}
+          </button>
+        </div>
+
+        <div *ngIf="gradeError" class="alert alert-danger">
+          {{ gradeError }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="gradeScore">
+            Điểm số (Thang điểm: 0 đến {{ assignment?.maxScore }}):
+          </label>
+          <input
+            type="number"
+            id="gradeScore"
+            class="form-control"
+            [(ngModel)]="gradeScore"
+            [min]="0"
+            [max]="assignment?.maxScore || 100"
+            step="0.5"
+            placeholder="Nhập điểm số..."
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="gradeFeedback">Nhận xét / Đánh giá của giảng viên:</label>
+          <textarea
+            id="gradeFeedback"
+            class="form-control"
+            rows="4"
+            [(ngModel)]="gradeFeedback"
+            placeholder="Ghi nhận xét, ưu điểm hoặc điểm cần khắc phục của bài làm..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeGradeModal()" [disabled]="savingGrade">
+          Hủy bỏ
+        </button>
+        <button type="button" class="btn btn-primary" (click)="submitGrade()" [disabled]="savingGrade">
+          <span *ngIf="savingGrade" class="spinner-sm"></span>
+          <span>{{ savingGrade ? 'Đang lưu...' : 'Lưu kết quả chấm' }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
