@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CourseService } from '../../../core/services/course.service';
+import { ContentService } from '../../../core/services/content.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Course } from '../../../core/models/course.model';
+import { Chapter } from '../../../core/models/content.model';
 
 @Component({
   selector: 'app-course-detail',
@@ -12,6 +14,7 @@ import { Course } from '../../../core/models/course.model';
 export class CourseDetailComponent implements OnInit {
   courseId!: number;
   course: Course | null = null;
+  chapters: Chapter[] = [];
   loading = true;
   errorMessage = '';
   isForbidden = false;
@@ -23,6 +26,7 @@ export class CourseDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private courseService: CourseService,
+    private contentService: ContentService,
     public authService: AuthService
   ) {}
 
@@ -48,6 +52,7 @@ export class CourseDetailComponent implements OnInit {
       next: (data) => {
         this.course = data;
         this.loading = false;
+        this.loadChapters();
       },
       error: (err) => {
         this.loading = false;
@@ -61,6 +66,15 @@ export class CourseDetailComponent implements OnInit {
           this.errorMessage = err.error?.message || 'Không thể tải thông tin khóa học.';
         }
       }
+    });
+  }
+
+  loadChapters(): void {
+    this.contentService.getCourseChapters(this.courseId).subscribe({
+      next: (chaptersData) => {
+        this.chapters = chaptersData;
+      },
+      error: () => {}
     });
   }
 

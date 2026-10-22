@@ -11,10 +11,8 @@ namespace StudentManagement.Api.Data
     {
         public static async Task InitializeAsync(AppDbContext context, IPasswordHasher passwordHasher)
         {
-            // Create database tables if not exist (idempotent, safe)
             await context.Database.EnsureCreatedAsync();
 
-            // Seed only if no users exist (do NOT overwrite existing data)
             if (!await context.Users.AnyAsync())
             {
                 var admin = new User
@@ -118,6 +116,71 @@ namespace StudentManagement.Api.Data
 
                 await context.Enrollments.AddRangeAsync(enrollments);
                 await context.SaveChangesAsync();
+            }
+
+            // Seed Chapters and Lessons if none exist
+            if (!await context.CourseChapters.AnyAsync())
+            {
+                var course1 = await context.Courses.FirstOrDefaultAsync(c => c.Code == "CS101");
+                if (course1 != null)
+                {
+                    var ch1 = new CourseChapter
+                    {
+                        CourseId = course1.Id,
+                        Title = "Chương 1: Tổng quan về ngôn ngữ C# và .NET",
+                        Description = "Giới thiệu nền tảng .NET 5, CLR, CTS và cú pháp C# căn bản.",
+                        OrderIndex = 1,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    var ch2 = new CourseChapter
+                    {
+                        CourseId = course1.Id,
+                        Title = "Chương 2: Lập trình hướng đối tượng (OOP) trong C#",
+                        Description = "Lớp, đối tượng, tính đóng gói, kế thừa và đa hình.",
+                        OrderIndex = 2,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    await context.CourseChapters.AddRangeAsync(ch1, ch2);
+                    await context.SaveChangesAsync();
+
+                    var lesson1 = new Lesson
+                    {
+                        ChapterId = ch1.Id,
+                        Title = "Bài 1.1: Giới thiệu kiến trúc .NET 5 và Cài đặt môi trường",
+                        Description = "Cài đặt .NET 5 SDK và Visual Studio Code trên máy tính.",
+                        OrderIndex = 1,
+                        VideoUrl = "https://www.youtube.com/watch?v=0kFh2oNnU7k",
+                        IsPublished = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    var lesson2 = new Lesson
+                    {
+                        ChapterId = ch1.Id,
+                        Title = "Bài 1.2: Các kiểu dữ liệu cơ bản, Biến và Cấu trúc điều khiển",
+                        Description = "Tìm hiểu int, string, bool, if-else, switch-case và vòng lặp for/while.",
+                        OrderIndex = 2,
+                        VideoUrl = "https://www.youtube.com/watch?v=0kFh2oNnU7k",
+                        IsPublished = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    var lesson3 = new Lesson
+                    {
+                        ChapterId = ch2.Id,
+                        Title = "Bài 2.1: Class, Struct và Namespace",
+                        Description = "Khai báo class, khởi tạo đối tượng với từ khóa new và đóng gói namespace.",
+                        OrderIndex = 1,
+                        VideoUrl = "https://www.youtube.com/watch?v=0kFh2oNnU7k",
+                        IsPublished = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    await context.Lessons.AddRangeAsync(lesson1, lesson2, lesson3);
+                    await context.SaveChangesAsync();
+                }
             }
         }
     }

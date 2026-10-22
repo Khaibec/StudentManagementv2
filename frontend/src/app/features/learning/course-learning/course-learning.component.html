@@ -1,0 +1,421 @@
+<div class="learning-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Đang tải nội dung học tập...</p>
+  </div>
+
+  <!-- 403 Forbidden State -->
+  <div *ngIf="!loading && isForbidden" class="error-page-container">
+    <div class="error-card forbidden-card">
+      <div class="error-icon">🚫</div>
+      <h2>Truy cập bị từ chối (403 Forbidden)</h2>
+      <p>{{ errorMessage }}</p>
+      <p class="error-hint">
+        Bạn chỉ có thể xem nội dung học tập của các khóa học mà bạn đã được ghi danh hoặc phân công.
+      </p>
+      <a routerLink="/courses" class="btn btn-primary" style="margin-top: 16px;">
+        Về Khóa học của tôi
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Learning Workspace -->
+  <div *ngIf="!loading && !isForbidden && course" class="learning-workspace">
+    <!-- LEFT SIDEBAR: Chapters & Lessons -->
+    <aside class="learning-sidebar">
+      <div class="sidebar-top">
+        <a [routerLink]="['/courses', course.id]" class="back-link">
+          <span>← Quay lại chi tiết môn</span>
+        </a>
+        <h2 class="sidebar-course-title" [title]="course.title">{{ course.title }}</h2>
+        <span class="sidebar-course-code">{{ course.code }}</span>
+
+        <!-- Student Progress Bar -->
+        <div *ngIf="authService.isStudent" class="progress-box">
+          <div class="progress-info">
+            <span class="progress-label">Tiến độ học tập</span>
+            <span class="progress-pct">{{ progressPercentage }}%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar" [style.width.%]="progressPercentage"></div>
+          </div>
+          <span class="progress-sub">Đã hoàn thành {{ completedLessonsCount }} / {{ totalLessonsCount }} bài học</span>
+        </div>
+
+        <!-- Teacher / Admin Add Chapter button -->
+        <div *ngIf="canManage()" class="sidebar-manage-bar">
+          <button (click)="openCreateChapterModal()" class="btn btn-primary btn-sm btn-full">
+            + Thêm chương mới
+          </button>
+        </div>
+      </div>
+
+      <!-- Chapter / Lesson Accordion Tree -->
+      <div class="chapter-list">
+        <div *ngIf="chapters.length === 0" class="sidebar-empty">
+          Chưa có chương nào. Hãy tạo chương đầu tiên!
+        </div>
+
+        <div *ngFor="let chapter of chapters; let chIdx = index" class="chapter-group">
+          <div class="chapter-header">
+            <div class="chapter-title-wrap">
+              <span class="chapter-num">{{ chIdx + 1 }}.</span>
+              <span class="chapter-name" [title]="chapter.title">{{ chapter.title }}</span>
+            </div>
+
+            <!-- Manage chapter buttons -->
+            <div *ngIf="canManage()" class="chapter-actions">
+              <button (click)="openCreateLessonModal(chapter.id, $event)" class="btn-icon" title="Thêm bài học vào chương này">
+                + Bài
+              </button>
+              <button (click)="openEditChapterModal(chapter, $event)" class="btn-icon" title="Sửa chương">
+                ✏️
+              </button>
+              <button (click)="deleteChapter(chapter, $event)" class="btn-icon text-danger" title="Xóa chương">
+                🗑️
+              </button>
+            </div>
+          </div>
+
+          <!-- Lessons in this chapter -->
+          <div class="lesson-list">
+            <div *ngIf="chapter.lessons.length === 0" class="lesson-empty">
+              (Chưa có bài học trong chương này)
+            </div>
+
+            <div
+              *ngFor="let lesson of chapter.lessons"
+              (click)="selectLesson(lesson.id)"
+              class="lesson-item"
+              [class.active]="lesson.id === activeLessonId"
+            >
+              <div class="lesson-status-icon">
+                <span *ngIf="authService.isStudent && lesson.isCompleted" class="icon-completed" title="Đã hoàn thành">✓</span>
+                <span *ngIf="authService.isStudent && !lesson.isCompleted" class="icon-circle">○</span>
+                <span *ngIf="!authService.isStudent" class="icon-video">🎬</span>
+              </div>
+
+              <div class="lesson-info">
+                <span class="lesson-name" [title]="lesson.title">{{ lesson.title }}</span>
+                <div class="lesson-meta-chips">
+                  <span *ngIf="!lesson.isPublished" class="chip-draft">Bản nháp</span>
+                  <span *ngIf="lesson.resourceCount > 0" class="chip-res">📎 {{ lesson.resourceCount }}</span>
+                </div>
+              </div>
+
+              <!-- Manage lesson buttons -->
+              <div *ngIf="canManage()" class="lesson-manage-btns" (click)="$event.stopPropagation()">
+                <button (click)="openEditLessonModal(lesson, $event)" class="btn-icon-xs" title="Sửa bài học">
+                  ✏️
+                </button>
+                <button (click)="deleteLesson(lesson, $event)" class="btn-icon-xs text-danger" title="Xóa bài học">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN CONTENT: Lesson Detail, Video, Resources, Complete Button -->
+    <main class="learning-main">
+      <!-- Lesson Loading -->
+      <div *ngIf="lessonLoading" class="lesson-loading-box">
+        <div class="spinner"></div>
+        <p>Đang tải bài học...</p>
+      </div>
+
+      <!-- No Active Lesson Selected -->
+      <div *ngIf="!lessonLoading && !activeLesson" class="no-lesson-box">
+        <div class="empty-state-icon">📖</div>
+        <h3>Chọn một bài học từ danh sách bên trái</h3>
+        <p>Chọn bài học để bắt đầu xem video bài giảng và tải tài liệu môn học.</p>
+      </div>
+
+      <!-- Active Lesson Content -->
+      <div *ngIf="!lessonLoading && activeLesson" class="lesson-view">
+        <!-- Lesson Top Bar -->
+        <div class="lesson-header-bar">
+          <div>
+            <span class="breadcrumb-ch">{{ activeLesson.chapterTitle }}</span>
+            <h1 class="lesson-main-title">{{ activeLesson.title }}</h1>
+          </div>
+
+          <div class="lesson-actions-top">
+            <span *ngIf="activeLesson.isCompleted && authService.isStudent" class="badge badge-success">
+              ✓ Đã hoàn thành ({{ activeLesson.completedAt | date:'HH:mm dd/MM' }})
+            </span>
+          </div>
+        </div>
+
+        <!-- Video Player Section -->
+        <div class="video-container" *ngIf="activeLesson.videoUrl">
+          <div *ngIf="safeVideoUrl" class="video-embed-wrapper">
+            <iframe
+              [src]="safeVideoUrl"
+              title="Video bài giảng"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
+          </div>
+          <div *ngIf="!safeVideoUrl" class="video-link-fallback">
+            <p>Liên kết video bài giảng: <a [href]="activeLesson.videoUrl" target="_blank" rel="noopener">{{ activeLesson.videoUrl }}</a></p>
+          </div>
+        </div>
+
+        <!-- No Video Notice -->
+        <div *ngIf="!activeLesson.videoUrl" class="no-video-placeholder">
+          <span>🎬 Bài học này không có video đính kèm. Vui lòng đọc nội dung và tài liệu bên dưới.</span>
+        </div>
+
+        <!-- Lesson Description & Text -->
+        <div class="lesson-body-section">
+          <h3 class="section-title">Nội dung bài học</h3>
+          <div class="lesson-description-text">
+            {{ activeLesson.description || 'Chưa có mô tả chi tiết cho bài học này.' }}
+          </div>
+        </div>
+
+        <!-- Lesson Resources / Documents Section -->
+        <div class="lesson-resources-section">
+          <div class="section-header-flex">
+            <h3 class="section-title">Tài liệu học tập đính kèm ({{ activeLesson.resources.length }})</h3>
+
+            <!-- Upload File Trigger (Teacher/Admin) -->
+            <div *ngIf="canManage()" class="upload-trigger-wrap">
+              <label class="btn btn-secondary btn-sm upload-btn-label">
+                <span>📎 Tải lên tài liệu mới</span>
+                <input
+                  type="file"
+                  (change)="onFileSelected($event)"
+                  style="display: none;"
+                  accept=".pdf,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.txt,.zip,.png,.jpg,.jpeg"
+                  [disabled]="uploadingFile"
+                />
+              </label>
+            </div>
+          </div>
+
+          <!-- Upload Status Banners -->
+          <div *ngIf="uploadingFile" class="alert alert-warning" style="margin-top: 8px;">
+            Đang tải lên tệp tin, vui lòng chờ...
+          </div>
+          <div *ngIf="uploadError" class="alert alert-danger" style="margin-top: 8px;">
+            {{ uploadError }}
+          </div>
+          <div *ngIf="uploadSuccess" class="alert alert-success" style="margin-top: 8px;">
+            {{ uploadSuccess }}
+          </div>
+
+          <!-- Resources List -->
+          <div *ngIf="activeLesson.resources.length === 0" class="no-resources-msg">
+            Chưa có tài liệu đính kèm cho bài học này.
+          </div>
+
+          <div *ngIf="activeLesson.resources.length > 0" class="resources-table-wrap">
+            <table class="resources-table">
+              <thead>
+                <tr>
+                  <th>Tên tệp</th>
+                  <th>Dung lượng</th>
+                  <th>Ngày đăng</th>
+                  <th style="text-align: right;">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let res of activeLesson.resources">
+                  <td>
+                    <span class="file-icon">📄</span>
+                    <strong>{{ res.fileName }}</strong>
+                  </td>
+                  <td>{{ formatFileSize(res.fileSize) }}</td>
+                  <td>{{ res.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td style="text-align: right;">
+                    <button (click)="downloadResource(res)" class="btn btn-primary btn-sm">
+                      Tải xuống
+                    </button>
+                    <button *ngIf="canManage()" (click)="deleteResource(res.id)" class="btn btn-danger btn-sm" style="margin-left: 6px;">
+                      Xóa
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Student Complete Button & Navigation Footer -->
+        <div class="lesson-footer-nav">
+          <div class="prev-nav">
+            <button (click)="goToPrevLesson()" class="btn btn-secondary" [disabled]="!hasPrevLesson()">
+              ← Bài trước
+            </button>
+          </div>
+
+          <!-- Student Complete Action (Idempotent) -->
+          <div class="complete-action-wrap" *ngIf="authService.isStudent">
+            <button
+              (click)="completeLesson()"
+              class="btn"
+              [ngClass]="activeLesson.isCompleted ? 'btn-success-solid' : 'btn-primary'"
+              [disabled]="completing"
+            >
+              <span *ngIf="completing" class="spinner" style="width: 14px; height: 14px; border-width: 2px;"></span>
+              <span *ngIf="!completing && activeLesson.isCompleted">✓ Đã hoàn thành bài này</span>
+              <span *ngIf="!completing && !activeLesson.isCompleted">Đánh dấu hoàn thành</span>
+            </button>
+          </div>
+
+          <div class="next-nav">
+            <button (click)="goToNextLesson()" class="btn btn-primary" [disabled]="!hasNextLesson()">
+              Bài tiếp theo →
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Chapter Modal -->
+<div *ngIf="showChapterModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>{{ isEditingChapter ? 'Chỉnh sửa chương' : 'Thêm chương mới' }}</h3>
+      <button (click)="showChapterModal = false" class="close-btn">&times;</button>
+    </div>
+
+    <div *ngIf="chapterModalError" class="alert alert-danger" style="margin: 16px;">
+      {{ chapterModalError }}
+    </div>
+
+    <form [formGroup]="chapterForm" (ngSubmit)="saveChapter()" class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="chTitle">Tiêu đề chương <span class="required">*</span></label>
+        <input
+          id="chTitle"
+          type="text"
+          formControlName="title"
+          class="form-control"
+          placeholder="Ví dụ: Chương 1: Giới thiệu căn bản"
+        />
+        <div *ngIf="chapterForm.get('title')?.touched && chapterForm.get('title')?.invalid" class="form-error">
+          Tiêu đề chương không được để trống (tối đa 250 ký tự)
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="chDesc">Mô tả chương</label>
+        <textarea
+          id="chDesc"
+          rows="3"
+          formControlName="description"
+          class="form-control"
+          placeholder="Mô tả nội dung chương học..."
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="chOrder">Thứ tự hiển thị (Order Index)</label>
+        <input
+          id="chOrder"
+          type="number"
+          formControlName="orderIndex"
+          class="form-control"
+        />
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" (click)="showChapterModal = false" class="btn btn-secondary" [disabled]="chapterModalLoading">
+          Hủy
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="chapterModalLoading">
+          <span *ngIf="chapterModalLoading" class="spinner" style="width: 14px; height: 14px; border-width: 2px;"></span>
+          <span *ngIf="!chapterModalLoading">{{ isEditingChapter ? 'Cập nhật' : 'Tạo mới' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Lesson Modal -->
+<div *ngIf="showLessonModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>{{ isEditingLesson ? 'Chỉnh sửa bài học' : 'Thêm bài học mới' }}</h3>
+      <button (click)="showLessonModal = false" class="close-btn">&times;</button>
+    </div>
+
+    <div *ngIf="lessonModalError" class="alert alert-danger" style="margin: 16px;">
+      {{ lessonModalError }}
+    </div>
+
+    <form [formGroup]="lessonForm" (ngSubmit)="saveLesson()" class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="lsTitle">Tiêu đề bài học <span class="required">*</span></label>
+        <input
+          id="lsTitle"
+          type="text"
+          formControlName="title"
+          class="form-control"
+          placeholder="Ví dụ: Bài 1.1: Cài đặt và cấu hình"
+        />
+        <div *ngIf="lessonForm.get('title')?.touched && lessonForm.get('title')?.invalid" class="form-error">
+          Tiêu đề bài học không được để trống (tối đa 250 ký tự)
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="lsDesc">Mô tả bài học</label>
+        <textarea
+          id="lsDesc"
+          rows="3"
+          formControlName="description"
+          class="form-control"
+          placeholder="Mô tả nội dung bài học..."
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="lsVideo">URL Video (YouTube, MP4...)</label>
+        <input
+          id="lsVideo"
+          type="text"
+          formControlName="videoUrl"
+          class="form-control"
+          placeholder="https://www.youtube.com/watch?v=..."
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="lsOrder">Thứ tự bài học</label>
+        <input
+          id="lsOrder"
+          type="number"
+          formControlName="orderIndex"
+          class="form-control"
+        />
+      </div>
+
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+          <input type="checkbox" formControlName="isPublished" />
+          <span>Công khai bài học này (sinh viên có thể xem)</span>
+        </label>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" (click)="showLessonModal = false" class="btn btn-secondary" [disabled]="lessonModalLoading">
+          Hủy
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="lessonModalLoading">
+          <span *ngIf="lessonModalLoading" class="spinner" style="width: 14px; height: 14px; border-width: 2px;"></span>
+          <span *ngIf="!lessonModalLoading">{{ isEditingLesson ? 'Cập nhật' : 'Tạo mới' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

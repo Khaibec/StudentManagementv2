@@ -35,6 +35,7 @@ namespace StudentManagement.Api
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ICourseService, CourseService>();
+            services.AddScoped<IContentService, ContentService>();
 
             // Authentication & JWT
             var jwtSettings = Configuration.GetSection("Jwt");

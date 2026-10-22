@@ -59,8 +59,19 @@
         </div>
       </div>
 
-      <h1 class="course-headline">{{ course.title }}</h1>
-      <p class="course-subheadline">{{ course.description || 'Chưa có mô tả cho khóa học này.' }}</p>
+      <div class="headline-flex">
+        <div>
+          <h1 class="course-headline">{{ course.title }}</h1>
+          <p class="course-subheadline">{{ course.description || 'Chưa có mô tả cho khóa học này.' }}</p>
+        </div>
+
+        <div class="go-learn-btn-wrap">
+          <a [routerLink]="['/courses', course.id, 'learn']" class="btn btn-primary btn-lg">
+            <span>Vào phòng học</span>
+            <span>→</span>
+          </a>
+        </div>
+      </div>
 
       <div class="detail-stats-bar">
         <div class="stat-item">
@@ -92,7 +103,7 @@
         class="tab-btn"
         [class.active]="activeTab === 'content'"
       >
-        Chương & Bài học (Phase 2)
+        Chương & Bài học ({{ chapters.length }} chương)
       </button>
       <button
         (click)="setTab('assignments')"
@@ -113,18 +124,44 @@
           <ul>
             <li>Khóa học được cấu trúc theo các chương và bài học trực tuyến kèm video bài giảng và tài liệu PDF.</li>
             <li>Học viên cần hoàn thành các bài học và nộp các bài tập đúng hạn để được chấm điểm.</li>
-            <li>Mọi kết quả và nhận xét từ giảng viên sẽ được thông báo trực tiếp trên hệ thống LMS.</li>
+            <li>Bấm vào nút <strong>"Vào phòng học"</strong> ở phía trên để bắt đầu học và theo dõi tiến độ.</li>
           </ul>
         </div>
       </div>
     </div>
 
-    <!-- Tab 2: Phase 2 Content Placeholder -->
+    <!-- Tab 2: Phase 2 Content Breakdown Preview -->
     <div *ngIf="activeTab === 'content'" class="card tab-pane">
-      <div class="phase-preview-box">
-        <span class="preview-badge">Kế hoạch Phase 2</span>
-        <h3>Cấu trúc bài giảng & Tài liệu học tập</h3>
-        <p>Tính năng xem video bài giảng, tải tài liệu PDF và đánh dấu tiến độ hoàn thành bài học sẽ được hoàn thiện trong Phase 2.</p>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3>Đề cương chương trình học</h3>
+        <a [routerLink]="['/courses', course.id, 'learn']" class="btn btn-primary btn-sm">
+          <span>Vào phòng học</span>
+          <span>→</span>
+        </a>
+      </div>
+
+      <div *ngIf="chapters.length === 0" class="empty-state">
+        Chưa có nội dung chương & bài học nào cho khóa này.
+      </div>
+
+      <div *ngIf="chapters.length > 0" class="chapter-preview-list">
+        <div *ngFor="let ch of chapters; let i = index" class="chapter-preview-item">
+          <div class="ch-preview-header">
+            <strong>Chương {{ ch.orderIndex || (i + 1) }}: {{ ch.title }}</strong>
+            <span style="font-size: 13px; color: var(--text-muted);">{{ ch.lessons.length }} bài học</span>
+          </div>
+          <p *ngIf="ch.description" style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 10px 0;">
+            {{ ch.description }}
+          </p>
+
+          <ul class="lesson-preview-list">
+            <li *ngFor="let l of ch.lessons" class="lesson-preview-li">
+              <span class="l-name">{{ l.title }}</span>
+              <span *ngIf="authService.isStudent && l.isCompleted" class="badge badge-success">✓ Đã hoàn thành</span>
+              <span *ngIf="!l.isPublished" class="badge badge-student">Bản nháp</span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
 

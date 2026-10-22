@@ -41,6 +41,15 @@
   gap: 8px;
 }
 
+.headline-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
 .course-headline {
   font-size: 26px;
   font-weight: 700;
@@ -51,7 +60,12 @@
 .course-subheadline {
   font-size: 15px;
   color: var(--text-secondary);
-  margin-bottom: 20px;
+}
+
+.btn-lg {
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .detail-stats-bar {
@@ -116,7 +130,6 @@
 .tab-pane h3 {
   font-size: 18px;
   font-weight: 600;
-  margin-bottom: 16px;
 }
 
 .overview-body p {
@@ -147,6 +160,45 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* Chapter Preview */
+.chapter-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chapter-preview-item {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 16px;
+  background-color: #f8fafc;
+}
+
+.ch-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lesson-preview-list {
+  list-style: none;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lesson-preview-li {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
 }
 
 .phase-preview-box {
