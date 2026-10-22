@@ -1,0 +1,68 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="logo">🎓</div>
+      <h2>Đăng nhập Hệ thống LMS</h2>
+      <p class="subtitle">Hệ thống Quản lý Học tập và Khóa học</p>
+    </div>
+
+    <!-- Error Alert -->
+    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+      {{ errorMessage }}
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label class="form-label" for="username">Tên đăng nhập</label>
+        <input
+          id="username"
+          type="text"
+          formControlName="username"
+          class="form-control"
+          placeholder="Nhập tên đăng nhập..."
+          autocomplete="username"
+        />
+        <div *ngIf="loginForm.get('username')?.touched && loginForm.get('username')?.invalid" class="form-error">
+          Vui lòng nhập tên đăng nhập
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Mật khẩu</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          class="form-control"
+          placeholder="Nhập mật khẩu..."
+          autocomplete="current-password"
+        />
+        <div *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid" class="form-error">
+          Vui lòng nhập mật khẩu
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" [disabled]="loading">
+        <span *ngIf="loading" class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></span>
+        <span *ngIf="!loading">Đăng nhập</span>
+        <span *ngIf="loading">Đang xác thực...</span>
+      </button>
+    </form>
+
+    <!-- Quick Test Accounts -->
+    <div class="test-accounts-section">
+      <p class="test-title">Tài khoản kiểm thử nhanh (bấm để điền):</p>
+      <div class="test-pill-grid">
+        <button
+          type="button"
+          *ngFor="let acc of testAccounts"
+          (click)="fillAccount(acc)"
+          class="test-pill"
+          [attr.data-role]="acc.role"
+        >
+          <strong>{{ acc.label }}:</strong> {{ acc.username }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

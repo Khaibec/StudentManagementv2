@@ -1,0 +1,205 @@
+<div class="container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">
+        <span *ngIf="authService.isStudent">Khóa học đã ghi danh</span>
+        <span *ngIf="authService.isTeacher">Khóa học được phân công</span>
+        <span *ngIf="authService.isAdmin">Quản trị toàn bộ khóa học</span>
+      </h1>
+      <p class="page-subtitle">
+        <span *ngIf="authService.isStudent">Danh sách các môn học bạn đang tham gia học tập</span>
+        <span *ngIf="authService.isTeacher">Quản lý nội dung và học viên các lớp học bạn phụ trách</span>
+        <span *ngIf="authService.isAdmin">Xem và quản lý tất cả các khóa học trên hệ thống LMS</span>
+      </p>
+    </div>
+
+    <!-- Add Course Button (Teacher / Admin) -->
+    <div *ngIf="authService.isTeacher || authService.isAdmin">
+      <button (click)="openCreateModal()" class="btn btn-primary">
+        <span>+ Thêm khóa học mới</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Đang tải danh sách khóa học...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && errorMessage" class="alert alert-danger" role="alert">
+    <p>{{ errorMessage }}</p>
+    <button (click)="loadCourses()" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
+      Thử lại
+    </button>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !errorMessage && courses.length === 0" class="empty-state">
+    <div class="empty-state-icon">📚</div>
+    <h3>Chưa có khóa học nào</h3>
+    <p *ngIf="authService.isStudent">Bạn chưa được ghi danh vào khóa học nào trong học kỳ này.</p>
+    <p *ngIf="authService.isTeacher">Bạn chưa được phân công phụ trách khóa học nào. Hãy tạo khóa học mới!</p>
+    <p *ngIf="authService.isAdmin">Hệ thống chưa có khóa học nào. Hãy tạo khóa học đầu tiên!</p>
+    <div *ngIf="authService.isTeacher || authService.isAdmin" style="margin-top: 16px;">
+      <button (click)="openCreateModal()" class="btn btn-primary btn-sm">Tạo khóa học ngay</button>
+    </div>
+  </div>
+
+  <!-- Course Card Grid -->
+  <div *ngIf="!loading && !errorMessage && courses.length > 0" class="course-grid">
+    <div *ngFor="let course of courses" class="card course-card">
+      <div class="card-header">
+        <div class="course-code-wrap">
+          <span class="course-code">{{ course.code }}</span>
+          <span *ngIf="course.isEnrolled && authService.isStudent" class="badge badge-enrolled">Đã ghi danh</span>
+        </div>
+        <span class="badge" [ngClass]="course.status === 'Active' ? 'badge-active' : 'badge-student'">
+          {{ course.status === 'Active' ? 'Đang mở' : course.status }}
+        </span>
+      </div>
+
+      <div class="card-body">
+        <h3 class="course-title">
+          <a [routerLink]="['/courses', course.id]">{{ course.title }}</a>
+        </h3>
+        <p class="course-desc">{{ course.description || 'Chưa có mô tả chi tiết cho môn học này.' }}</p>
+        
+        <div class="course-meta">
+          <div class="meta-item">
+            <span class="meta-label">Giảng viên:</span>
+            <span class="meta-value">{{ course.teacherName }}</span>
+          </div>
+          <div class="meta-item" *ngIf="!authService.isStudent">
+            <span class="meta-label">Số sinh viên:</span>
+            <span class="meta-value">{{ course.enrollmentCount }} sinh viên</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <a [routerLink]="['/courses', course.id]" class="btn btn-primary btn-sm">
+          <span>Xem chi tiết</span>
+          <span>→</span>
+        </a>
+
+        <!-- Management buttons for owner/admin -->
+        <div class="manage-actions" *ngIf="canManageCourse(course)">
+          <button (click)="openEditModal(course)" class="btn btn-secondary btn-sm" title="Sửa thông tin">
+            Sửa
+          </button>
+          <button (click)="confirmDelete(course)" class="btn btn-danger btn-sm" title="Xóa khóa học">
+            Xóa
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create / Edit Course Modal -->
+<div *ngIf="showModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>{{ isEditing ? 'Chỉnh sửa khóa học' : 'Thêm khóa học mới' }}</h3>
+      <button (click)="closeModal()" class="close-btn">&times;</button>
+    </div>
+
+    <div *ngIf="modalError" class="alert alert-danger" style="margin: 16px;">
+      {{ modalError }}
+    </div>
+
+    <form [formGroup]="courseForm" (ngSubmit)="saveCourse()" class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="code">Mã khóa học <span class="required">*</span></label>
+        <input
+          id="code"
+          type="text"
+          formControlName="code"
+          class="form-control"
+          placeholder="Ví dụ: CS101, IT202..."
+        />
+        <div *ngIf="courseForm.get('code')?.touched && courseForm.get('code')?.invalid" class="form-error">
+          Mã khóa học không được để trống (tối đa 50 ký tự)
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="title">Tên khóa học <span class="required">*</span></label>
+        <input
+          id="title"
+          type="text"
+          formControlName="title"
+          class="form-control"
+          placeholder="Nhập tên khóa học..."
+        />
+        <div *ngIf="courseForm.get('title')?.touched && courseForm.get('title')?.invalid" class="form-error">
+          Tên khóa học không được để trống (tối đa 250 ký tự)
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="description">Mô tả khóa học</label>
+        <textarea
+          id="description"
+          rows="3"
+          formControlName="description"
+          class="form-control"
+          placeholder="Giới thiệu nội dung và mục tiêu môn học..."
+        ></textarea>
+      </div>
+
+      <div class="form-group" *ngIf="isEditing">
+        <label class="form-label" for="status">Trạng thái</label>
+        <select id="status" formControlName="status" class="form-control">
+          <option value="Active">Đang mở (Active)</option>
+          <option value="Inactive">Tạm ngưng (Inactive)</option>
+          <option value="Archived">Đã kết thúc (Archived)</option>
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" (click)="closeModal()" class="btn btn-secondary" [disabled]="modalLoading">
+          Hủy bỏ
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="modalLoading">
+          <span *ngIf="modalLoading" class="spinner" style="width: 14px; height: 14px; border-width: 2px;"></span>
+          <span *ngIf="!modalLoading">{{ isEditing ? 'Lưu thay đổi' : 'Tạo mới' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div *ngIf="showDeleteModal && deletingCourse" class="modal-overlay">
+  <div class="modal-card modal-sm">
+    <div class="modal-header">
+      <h3 style="color: var(--danger);">Xác nhận xóa khóa học</h3>
+      <button (click)="closeDeleteModal()" class="close-btn">&times;</button>
+    </div>
+
+    <div *ngIf="deleteError" class="alert alert-danger" style="margin: 16px;">
+      {{ deleteError }}
+    </div>
+
+    <div class="modal-body">
+      <p>Bạn có chắc chắn muốn xóa khóa học <strong>{{ deletingCourse.title }} ({{ deletingCourse.code }})</strong>?</p>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">
+        Lưu ý: Hành động này không thể hoàn tác. Mọi dữ liệu liên quan sẽ bị loại bỏ.
+      </p>
+    </div>
+
+    <div class="modal-footer">
+      <button (click)="closeDeleteModal()" class="btn btn-secondary" [disabled]="deleteLoading">
+        Hủy
+      </button>
+      <button (click)="executeDelete()" class="btn btn-danger" [disabled]="deleteLoading">
+        <span *ngIf="deleteLoading" class="spinner" style="width: 14px; height: 14px; border-width: 2px;"></span>
+        <span *ngIf="!deleteLoading">Xác nhận xóa</span>
+      </button>
+    </div>
+  </div>
+</div>

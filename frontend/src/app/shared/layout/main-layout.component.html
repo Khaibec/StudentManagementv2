@@ -1,0 +1,38 @@
+<div class="layout-wrapper" *ngIf="currentUser$ | async as user">
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-left">
+      <a routerLink="/courses" class="brand">
+        <span class="brand-icon">🎓</span>
+        <span class="brand-text">LMS StudentManagement</span>
+      </a>
+
+      <nav class="nav-links">
+        <a routerLink="/courses" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+          Khóa học của tôi
+        </a>
+      </nav>
+    </div>
+
+    <div class="nav-right">
+      <div class="user-info">
+        <span class="user-name">{{ user.fullName || user.username }}</span>
+        <span class="badge" [ngClass]="getRoleBadgeClass(user.role)">{{ getRoleLabel(user.role) }}</span>
+      </div>
+
+      <button (click)="onLogout()" class="btn btn-secondary btn-sm" title="Đăng xuất khỏi hệ thống">
+        Đăng xuất
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="content-area">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Hệ thống Quản lý Học tập LMS MVP © 2026 - Dự án StudentManagementv2</p>
+  </footer>
+</div>

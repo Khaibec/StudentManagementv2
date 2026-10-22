@@ -1,0 +1,24 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+appsettings.Development.json
+*.db
+*.log
+
+# Node & Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads & Temp
+uploads/
+storage/
+temp/
+.vs/
+.vscode/
+.idea/
