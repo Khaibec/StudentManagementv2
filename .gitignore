@@ -1,24 +1,148 @@
-# .NET
-bin/
-obj/
-*.user
-*.suo
-appsettings.Development.json
-*.db
-*.log
+# ==============================================================================
+# .NET / C# / Visual Studio
+# ==============================================================================
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+bld/
 
-# Node & Angular
+# User-specific Visual Studio files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+*.userprefs
+*.DotSettings.user
+
+# Visual Studio cache
+.vs/
+_ReSharper*/
+
+# Test Results & Code Coverage
+[Tt]est[Rr]esults/
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet packages & build properties
+*.nupkg
+*.snupkg
+project.lock.json
+project.assets.json
+*.nuget.props
+*.nuget.targets
+
+# ==============================================================================
+# Node.js & Angular Frontend
+# ==============================================================================
 node_modules/
 dist/
+/dist
+out-tsc/
+/out-tsc
+bazel-out/
+/bazel-out
+
+# Angular cache & CLI
 .angular/
+.angular/cache/
+
+# Frontend testing & coverage
+coverage/
+*.lcov
+.nyc_output/
+testem.log
+connect.lock
+chrome-profiler-events*.json
+
+# Package manager logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# Uploads & Temp
+# ==============================================================================
+# Environment, Secrets & Local Settings
+# ==============================================================================
+appsettings.Development.json
+appsettings.*.local.json
+appsettings.local.json
+secrets.json
+.env
+.env.local
+.env.*.local
+
+# ==============================================================================
+# Uploads, Storage & Temporary Files
+# ==============================================================================
 uploads/
+**/uploads/
 storage/
+**/storage/
 temp/
-.vs/
-.vscode/
+tmp/
+**/temp/
+**/tmp/
+.sass-cache/
+
+# ==============================================================================
+# Databases & Backups
+# ==============================================================================
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.mdf
+*.ldf
+*.bak
+
+# ==============================================================================
+# Logs
+# ==============================================================================
+*.log
+logs/
+[Ll]ogs/
+
+# ==============================================================================
+# IDEs & Editors
+# ==============================================================================
 .idea/
+.history/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# VS Code - Ignore local user state, but allow shared config if present
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ==============================================================================
+# Operating System Files
+# ==============================================================================
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+.directory
+.fuse_hidden*
